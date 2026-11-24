@@ -277,7 +277,7 @@
     <label>Kategori</label>
     <div class="chips" id="catChips"></div>
     <label>Jumlah (Rp)</label>
-    <input id="fJumlah" type="number" inputmode="numeric" min="1" placeholder="cth: 50000">
+    <input id="fJumlah" type="text" inputmode="numeric" placeholder="cth: 50.000">
     <label>Keterangan</label>
     <input id="fKet" type="text" placeholder="cth: bensin, makan siang, gaji…">
     <label>Uang milik siapa?</label>
@@ -476,6 +476,12 @@ function renderChips(){
   $("segOut").className = formTipe === "pengeluaran" ? "on-out" : "";
   $("segIn").className = formTipe === "pemasukan" ? "on-in" : "";
 }
+function formatJumlah(){
+  const el = $("fJumlah");
+  const digits = el.value.replace(/\D/g, "");
+  el.value = digits ? Number(digits).toLocaleString("id-ID") : "";
+}
+$("fJumlah").addEventListener("input", formatJumlah);
 $("segOut").onclick = () => { formTipe = "pengeluaran"; formKat = KATEGORI.pengeluaran[0]; renderChips(); };
 $("segIn").onclick = () => { formTipe = "pemasukan"; formKat = KATEGORI.pemasukan[0]; renderChips(); };
 
@@ -490,7 +496,7 @@ $("cancelBtn").onclick = () => $("txDialog").close();
 
 $("saveBtn").onclick = async () => {
   const err = $("formErr"); err.style.display = "none";
-  const jumlah = parseInt($("fJumlah").value, 10);
+  const jumlah = parseInt($("fJumlah").value.replace(/\D/g, ""), 10);
   if(!$("fTanggal").value || !jumlah || jumlah <= 0){
     err.textContent = "Tanggal dan jumlah (lebih dari 0) wajib diisi."; err.style.display = "block"; return;
   }
@@ -562,7 +568,7 @@ $("receiptFile").addEventListener("change", async e => {
     const text = data.text || "";
     const total = findTotal(text), tgl = findDate(text), toko = findStore(text);
     formTipe = "pengeluaran"; formKat = "Belanja"; renderChips();
-    if(total) $("fJumlah").value = total;
+    if(total){ $("fJumlah").value = total; formatJumlah(); }
     if(tgl) $("fTanggal").value = tgl;
     $("fKet").value = toko ? "Struk: " + toko : "Struk belanja";
     btn.textContent = "📷 Scan struk belanja"; btn.disabled = false;

@@ -264,6 +264,9 @@
   <div class="inner">
     <div class="grab"></div>
     <h3>Catat transaksi</h3>
+    <button type="button" class="btn ghost" id="scanBtn" style="width:100%; margin-top:12px">📷 Scan struk belanja</button>
+    <input type="file" id="receiptFile" accept="image/*" capture="environment" class="hidden">
+    <p style="color:var(--muted); font-size:12.5px; margin:8px 0 0">Foto struknya, biar aplikasi yang bacain total, tanggal, dan nama tokonya. Kamu tinggal cek lalu simpan.</p>
     <label>Jenis</label>
     <div class="seg">
       <button type="button" id="segOut">Pengeluaran</button>
@@ -502,6 +505,74 @@ $("saveBtn").onclick = async () => {
   toast("Transaksi tersimpan ✓");
   loadData();
 };
+
+// ---------- SCAN STRUK (OCR di HP, tanpa AI berbayar / API key) ----------
+let tessLoading = null;
+function loadTesseract(){
+  if(window.Tesseract) return Promise.resolve();
+  if(!tessLoading) tessLoading = new Promise((res, rej) => {
+    const sc = document.createElement("script");
+    sc.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+    sc.onload = res; sc.onerror = () => rej(new Error("gagal memuat mesin OCR"));
+    document.head.appendChild(sc);
+  });
+  return tessLoading;
+}
+function parseAmountStr(x){
+  let t = String(x).replace(/[^\d.,]/g, "");
+  if(!t) return 0;
+  t = t.split(".").join("");
+  if(t.includes(",")) t = t.split(",")[0];
+  return parseInt(t, 10) || 0;
+}
+function findTotal(text){
+  const amtRe = /(?:Rp\s*)?(\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{2})?|\d{4,})/g;
+  let best = 0;
+  text.split(/\n/).forEach(l => {
+    const nums = [...l.matchAll(amtRe)].map(m => parseAmountStr(m[1])).filter(n => n >= 500);
+    if(nums.length && /total|jumlah|bayar|tagihan|grand/i.test(l)) best = Math.max(best, ...nums);
+  });
+  if(best) return best;
+  const all = [...text.matchAll(amtRe)].map(m => parseAmountStr(m[1])).filter(n => n >= 500 && n <= 100000000);
+  return all.length ? Math.max(...all) : 0;
+}
+function findDate(text){
+  const m = text.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if(!m) return null;
+  let y = +m[3]; if(y < 100) y += 2000;
+  const mo = +m[2], da = +m[1];
+  if(mo < 1 || mo > 12 || da < 1 || da > 31) return null;
+  return y + "-" + String(mo).padStart(2, "0") + "-" + String(da).padStart(2, "0");
+}
+function findStore(text){
+  const lines = text.split(/\n/).map(l => l.trim()).filter(l => l.length >= 3 && /[A-Za-z]/.test(l));
+  return lines.length ? lines[0].replace(/\s+/g, " ").slice(0, 60) : "";
+}
+$("scanBtn").onclick = () => $("receiptFile").click();
+$("receiptFile").addEventListener("change", async e => {
+  const file = e.target.files[0]; e.target.value = "";
+  if(!file) return;
+  const btn = $("scanBtn"), err = $("formErr"); err.style.display = "none";
+  btn.disabled = true; btn.textContent = "⏳ Menyiapkan mesin baca…";
+  try {
+    await loadTesseract();
+    const { data } = await Tesseract.recognize(file, "ind", {
+      logger: m => { if(m.status === "recognizing text") btn.textContent = "🔍 Membaca struk… " + Math.round(m.progress * 100) + "%"; }
+    });
+    const text = data.text || "";
+    const total = findTotal(text), tgl = findDate(text), toko = findStore(text);
+    formTipe = "pengeluaran"; formKat = "Belanja"; renderChips();
+    if(total) $("fJumlah").value = total;
+    if(tgl) $("fTanggal").value = tgl;
+    $("fKet").value = toko ? "Struk: " + toko : "Struk belanja";
+    btn.textContent = "📷 Scan struk belanja"; btn.disabled = false;
+    if(total) toast("Struk terbaca ✓ Cek dulu sebelum simpan ya");
+    else { err.textContent = "Total struk nggak ketemu. Fotonya coba yang lebih terang & rata, atau isi jumlahnya manual ya."; err.style.display = "block"; }
+  } catch(ex) {
+    btn.textContent = "📷 Scan struk belanja"; btn.disabled = false;
+    err.textContent = "Gagal membaca struk: " + ex.message + ". Isi manual aja ya."; err.style.display = "block";
+  }
+});
 
 // Realtime: data berubah di HP pasangan -> tampilan ikut berubah
 sb.channel("tx-changes")

@@ -298,8 +298,8 @@
   </div>
 
   <div class="card anim" style="--i:6">
-    <h3>🔁 Tagihan rutin</h3>
-    <div class="hint">Tercatat otomatis pas jatuh tempo — nggak perlu ingat-ingat</div>
+    <h3>🔔 Pengingat tagihan</h3>
+    <div class="hint">Cuma pengingat — saldo nggak kepotong. Pas bayar beneran, catat pengeluarannya manual ya</div>
     <div id="recList"><div class="empty">Memuat…</div></div>
     <button class="btn ghost wide" id="addRecBtn">＋ Tambah tagihan</button>
   </div>
@@ -409,7 +409,7 @@
 <dialog id="recDialog">
   <div class="inner">
     <div class="grab"></div>
-    <h3>Tagihan rutin 🔁</h3>
+    <h3>Pengingat tagihan 🔔</h3>
     <label>Nama</label>
     <input id="rNama" type="text" placeholder="cth: Kos, Listrik, WiFi, Pulsa…">
     <label>Kategori</label>
@@ -426,7 +426,7 @@
     <div class="err" id="rErr"></div>
     <div style="display:flex; gap:8px; margin-top:18px">
       <button class="btn ghost" id="rCancel" style="flex:1">Batal</button>
-      <button class="btn" id="rSave" style="flex:2">Buat tagihan</button>
+      <button class="btn" id="rSave" style="flex:2">Buat pengingat</button>
     </div>
   </div>
 </dialog>
@@ -701,25 +701,10 @@ bindAmt("gTarget"); bindAmt("nJumlah"); bindAmt("rJumlah");
 const amtVal = id => parseInt($(id).value.replace(/\D/g, ""), 10) || 0;
 
 async function processRecurring(){
+  // Tagihan sifatnya PENGINGAT visual saja (permintaan Hafizh): tidak membuat
+  // transaksi dan tidak memotong saldo. Pembayaran dicatat manual oleh pengguna.
   const { data } = await sb.from("recurring").select("*").eq("tipe", "pengeluaran").order("jatuh_tempo");
   recRules = data || [];
-  const now = new Date(); const y = now.getFullYear(), m = now.getMonth();
-  const periode = y + "-" + String(m + 1).padStart(2, "0");
-  const today = new Date(y, m, now.getDate());
-  for(const r of recRules){
-    if(r.aktif === false || r.terakhir_periode === periode) continue;
-    const lastDay = new Date(y, m + 1, 0).getDate();
-    const due = new Date(y, m, Math.min(r.jatuh_tempo, lastDay));
-    if(today < due) continue;
-    const { data: fresh } = await sb.from("recurring").select("terakhir_periode").eq("id", r.id).single();
-    if(fresh && fresh.terakhir_periode === periode){ r.terakhir_periode = periode; continue; }
-    const { error } = await sb.from("transactions").insert({ tanggal: isoD(due), tipe: r.tipe, kategori: r.kategori, keterangan: r.nama, jumlah: r.jumlah, dicatat_oleh: r.dicatat_oleh || "Apis" });
-    if(!error){
-      await sb.from("recurring").update({ terakhir_periode: periode }).eq("id", r.id);
-      r.terakhir_periode = periode;
-      toast("🔁 Tercatat otomatis: " + r.nama);
-    }
-  }
 }
 
 async function loadExtras(){
@@ -810,31 +795,30 @@ function renderRecurring(){
     const done = r.terakhir_periode === periode;
     const daysLeft = Math.round((due - today) / 86400000);
     let st;
-    if(done) st = '<span class="st ok">✓ Tercatat bulan ini</span>';
-    else if(daysLeft <= 0) st = '<span class="st soon">Jatuh tempo — tercatat otomatis</span>';
+    if(done) st = '<span class="st ok">✓ Sudah dibayar bulan ini</span>';
+    else if(daysLeft < 0) st = '<span class="st soon">⚠️ Lewat ' + Math.abs(daysLeft) + ' hari</span>';
+    else if(daysLeft === 0) st = '<span class="st soon">Jatuh tempo hari ini!</span>';
     else if(daysLeft <= 7) st = '<span class="st soon">' + daysLeft + ' hari lagi</span>';
     else st = '<span class="st wait">Tgl ' + r.jatuh_tempo + '</span>';
     return `<div class="rec">
       <div class="tile" style="background:${c[0]}; width:44px; height:44px; border-radius:15px; font-size:20px">${IKON[r.kategori] || "🔁"}</div>
       <div class="mid"><div class="nm">${escapeHtml(r.nama)}</div>
-      <div class="mt">−${rp(r.jumlah)} · tiap tgl ${r.jatuh_tempo} · uang ${r.dicatat_oleh || "-"}</div></div>
+      <div class="mt">${rp(r.jumlah)} · tiap tgl ${r.jatuh_tempo} · uang ${r.dicatat_oleh || "-"}</div></div>
       <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px">${st}
-      <div style="display:flex; gap:6px">${done ? "" : `<button class="mini" data-payrec="${r.id}" style="flex:none; padding:5px 10px">Catat sekarang</button>`}<button class="del" data-delrec="${r.id}" title="Hapus aturan">🗑</button></div></div>
+      <div style="display:flex; gap:6px">${done ? "" : `<button class="mini" data-paidrec="${r.id}" style="flex:none; padding:5px 10px">✓ Sudah dibayar</button>`}<button class="del" data-delrec="${r.id}" title="Hapus aturan">🗑</button></div></div>
     </div>`;
-  }).join("") : '<div class="empty"><span class="big">🔁</span>Belum ada tagihan.<br>Tambah kos, listrik, atau WiFi biar tercatat otomatis.</div>';
+  }).join("") : '<div class="empty"><span class="big">🔔</span>Belum ada pengingat tagihan.<br>Tambah kos, listrik, atau WiFi biar nggak lupa bayar.</div>';
   document.querySelectorAll("[data-delrec]").forEach(b => b.onclick = async () => {
     const r = recRules.find(x => x.id === +b.dataset.delrec);
-    if(!confirm("Hapus aturan \"" + (r ? r.nama : "") + "\"? Transaksi yang sudah tercatat tidak ikut terhapus.")) return;
+    if(!confirm("Hapus pengingat \"" + (r ? r.nama : "") + "\"?")) return;
     await sb.from("recurring").delete().eq("id", b.dataset.delrec);
-    toast("Aturan dihapus"); loadData();
+    toast("Pengingat dihapus"); loadData();
   });
-  document.querySelectorAll("[data-payrec]").forEach(b => b.onclick = async () => {
-    const r = recRules.find(x => x.id === +b.dataset.payrec); if(!r) return;
+  document.querySelectorAll("[data-paidrec]").forEach(b => b.onclick = async () => {
+    const r = recRules.find(x => x.id === +b.dataset.paidrec); if(!r) return;
     const now2 = new Date(); const periode2 = now2.getFullYear() + "-" + String(now2.getMonth() + 1).padStart(2, "0");
-    const { error } = await sb.from("transactions").insert({ tanggal: isoD(now2), tipe: r.tipe, kategori: r.kategori, keterangan: r.nama, jumlah: r.jumlah, dicatat_oleh: r.dicatat_oleh || "Apis" });
-    if(error){ toast("Gagal: " + error.message); return; }
     await sb.from("recurring").update({ terakhir_periode: periode2 }).eq("id", r.id);
-    toast("Tercatat ✓ " + r.nama); loadData();
+    toast("Ditandai sudah dibayar ✓"); loadData();
   });
 }
 
@@ -939,7 +923,7 @@ $("rSave").onclick = async () => {
   const { error } = await sb.from("recurring").insert({ nama: $("rNama").value.trim(), tipe: "pengeluaran", kategori: recKat, jumlah, jatuh_tempo: tempo, dicatat_oleh: recWho });
   $("rSave").disabled = false;
   if(error){ err.textContent = "Gagal: " + error.message; err.style.display = "block"; return; }
-  $("recDialog").close(); toast("Tagihan dibuat 🔁 tercatat otomatis tiap tgl " + tempo); loadData();
+  $("recDialog").close(); toast("Pengingat dibuat 🔔 tiap tgl " + tempo); loadData();
 };
 
 

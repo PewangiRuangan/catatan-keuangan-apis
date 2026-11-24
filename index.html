@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Catatan Keuangan — Apis & Indri</title>
 <meta name="theme-color" content="#0f766e">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Keuangan">
 <style>
   :root{
     --teal:#0f766e; --teal-dark:#115e59; --bg:#f6f7f9; --card:#ffffff;
@@ -307,6 +314,11 @@ $("saveBtn").onclick = async () => {
 sb.channel("tx-changes")
   .on("postgres_changes", { event: "*", schema: "public", table: "transactions" }, () => loadData())
   .subscribe();
+
+// PWA: daftarkan service worker agar bisa di-install jadi aplikasi
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+}
 </script>
 </body>
 </html>

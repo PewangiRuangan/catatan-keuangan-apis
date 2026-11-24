@@ -114,6 +114,33 @@
   .tx .amt{white-space:nowrap}
   .tx .del{background:#f6f8f7; border:1px solid var(--line); color:#9db3ad; width:32px; height:32px; border-radius:10px; font-size:13px; cursor:pointer; flex:none; display:flex; align-items:center; justify-content:center}
   .tx .del:active{transform:scale(.92)}
+  .tx .edit{background:#f6f8f7; border:1px solid var(--line); color:#9db3ad; width:32px; height:32px; border-radius:10px; font-size:13px; cursor:pointer; flex:none; display:flex; align-items:center; justify-content:center}
+  .tx .edit:active{transform:scale(.92)}
+  .btn.wide{width:100%; margin-top:12px}
+  .goal{padding:13px 0; border-bottom:1px solid var(--line)}
+  .goal:last-child{border-bottom:none}
+  .goal .g-top{display:flex; align-items:center; gap:10px}
+  .goal .g-name{font-weight:800; font-size:15px; flex:1; min-width:0}
+  .goal .g-pct{font-weight:800; color:#0f766e}
+  .gtrack{height:10px; background:#eef4f2; border-radius:99px; margin:10px 0 8px; overflow:hidden}
+  .gfill{height:100%; border-radius:99px; width:0; transition:width .9s cubic-bezier(.22,.9,.3,1)}
+  .goal .g-sub{color:var(--muted); font-size:12.5px; margin-top:2px}
+  .goal .g-act{display:flex; gap:8px; margin-top:10px}
+  .mini{background:#eef7f4; color:#0b6e5d; border:1px solid #d7ece5; padding:8px 10px; border-radius:12px; font-weight:700; font-size:13px; cursor:pointer; flex:1}
+  .mini.warn{background:#fff7ed; color:#b45309; border-color:#fde8cd}
+  .mini.icon{flex:0 0 44px}
+  .mini:active{transform:scale(.96)}
+  .rec{display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line)}
+  .rec:last-child{border-bottom:none}
+  .rec .mid{flex:1; min-width:0}
+  .rec .nm{font-weight:700; font-size:14.5px}
+  .rec .mt{color:var(--muted); font-size:12.5px; margin-top:2px}
+  .rec .del{background:#f6f8f7; border:1px solid var(--line); color:#9db3ad; width:32px; height:32px; border-radius:10px; font-size:13px; cursor:pointer; flex:none; display:flex; align-items:center; justify-content:center}
+  .rec .del:active{transform:scale(.92)}
+  .st{font-size:11px; font-weight:700; padding:3px 9px; border-radius:99px; white-space:nowrap}
+  .st.ok{background:#dcfce7; color:#15803d}
+  .st.soon{background:#fef3c7; color:#b45309}
+  .st.wait{background:#f1f5f9; color:#64748b}
   .empty{color:var(--muted); text-align:center; padding:26px 0}
   .empty .big{font-size:38px; display:block; margin-bottom:8px}
 
@@ -254,6 +281,20 @@
   </div>
 
   <div class="card anim" style="--i:6">
+    <h3>🔁 Tagihan &amp; rutin</h3>
+    <div class="hint">Tercatat otomatis pas jatuh tempo — nggak perlu ingat-ingat</div>
+    <div id="recList"><div class="empty">Memuat…</div></div>
+    <button class="btn ghost wide" id="addRecBtn">＋ Tambah tagihan / rutin</button>
+  </div>
+
+  <div class="card anim" style="--i:7">
+    <h3>🎯 Target tabungan</h3>
+    <div class="hint" id="goalHint">Nabung bareng buat tujuan kalian</div>
+    <div id="goalList"><div class="empty">Memuat…</div></div>
+    <button class="btn ghost wide" id="addGoalBtn">＋ Buat target baru</button>
+  </div>
+
+  <div class="card anim" style="--i:8">
     <h3>🕘 Riwayat transaksi</h3>
     <div id="txList"><div class="empty">Memuat…</div></div>
   </div>
@@ -266,7 +307,7 @@
 <dialog id="txDialog">
   <div class="inner">
     <div class="grab"></div>
-    <h3>Catat transaksi</h3>
+    <h3 id="txTitle">Catat transaksi</h3>
     <label>Jenis</label>
     <div class="seg">
       <button type="button" id="segOut">Pengeluaran</button>
@@ -289,6 +330,85 @@
     <div style="display:flex; gap:8px; margin-top:18px">
       <button class="btn ghost" id="cancelBtn" style="flex:1">Batal</button>
       <button class="btn" id="saveBtn" style="flex:2">Simpan</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="goalDialog">
+  <div class="inner">
+    <div class="grab"></div>
+    <h3>Buat target tabungan 🎯</h3>
+    <label>Nama target</label>
+    <input id="gNama" type="text" placeholder="cth: Deposit kos baru, Dana darurat, Liburan…">
+    <label>Ikon</label>
+    <div class="chips" id="gIkonChips"></div>
+    <label>Jumlah target (Rp)</label>
+    <input id="gTarget" type="text" inputmode="numeric" placeholder="cth: 5.000.000">
+    <label>Tenggat (boleh kosong)</label>
+    <input id="gDeadline" type="date">
+    <div class="err" id="gErr"></div>
+    <div style="display:flex; gap:8px; margin-top:18px">
+      <button class="btn ghost" id="gCancel" style="flex:1">Batal</button>
+      <button class="btn" id="gSave" style="flex:2">Buat target</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="nabungDialog">
+  <div class="inner">
+    <div class="grab"></div>
+    <h3 id="nTitle">Nabung</h3>
+    <div class="hint" id="nInfo"></div>
+    <label>Jenis</label>
+    <div class="seg">
+      <button type="button" id="nSegIn">＋ Nabung</button>
+      <button type="button" id="nSegOut">− Ambil</button>
+    </div>
+    <label>Tanggal</label>
+    <input id="nTanggal" type="date">
+    <label>Jumlah (Rp)</label>
+    <input id="nJumlah" type="text" inputmode="numeric" placeholder="cth: 200.000">
+    <label>Uang siapa?</label>
+    <div class="chips" id="nWhoChips">
+      <button type="button" data-nwho="Apis">Apis</button>
+      <button type="button" data-nwho="Indri">Indri</button>
+    </div>
+    <label>Keterangan</label>
+    <input id="nKet" type="text" placeholder="cth: sisa gaji November…">
+    <div class="err" id="nErr"></div>
+    <div style="display:flex; gap:8px; margin-top:18px">
+      <button class="btn ghost" id="nCancel" style="flex:1">Batal</button>
+      <button class="btn" id="nSave" style="flex:2">Simpan</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="recDialog">
+  <div class="inner">
+    <div class="grab"></div>
+    <h3>Tagihan / transaksi rutin 🔁</h3>
+    <label>Nama</label>
+    <input id="rNama" type="text" placeholder="cth: Kos, Listrik, Gaji Apis, WiFi…">
+    <label>Jenis</label>
+    <div class="seg">
+      <button type="button" id="rSegOut">Pengeluaran</button>
+      <button type="button" id="rSegIn">Pemasukan</button>
+    </div>
+    <label>Kategori</label>
+    <div class="chips" id="rCatChips"></div>
+    <label>Jumlah (Rp)</label>
+    <input id="rJumlah" type="text" inputmode="numeric" placeholder="cth: 500.000">
+    <label>Jatuh tempo tiap tanggal (1–31)</label>
+    <input id="rTempo" type="number" min="1" max="31" inputmode="numeric" placeholder="cth: 5">
+    <label>Uang milik siapa?</label>
+    <div class="chips" id="rWhoChips">
+      <button type="button" data-rwho="Apis">Apis</button>
+      <button type="button" data-rwho="Indri">Indri</button>
+    </div>
+    <div class="err" id="rErr"></div>
+    <div style="display:flex; gap:8px; margin-top:18px">
+      <button class="btn ghost" id="rCancel" style="flex:1">Batal</button>
+      <button class="btn" id="rSave" style="flex:2">Buat aturan</button>
     </div>
   </div>
 </dialog>
@@ -316,6 +436,11 @@ let viewDate = new Date(); viewDate.setDate(1);
 let formTipe = "pengeluaran", formKat = KATEGORI.pengeluaran[0], formWho = localStorage.getItem("keuangan_who") || "Apis";
 let shown = { saldo: 0, inn: 0, out: 0 };
 let txFilter = "semua";
+let editingId = null, lastSaldo = 0;
+let goals = [], goalEntries = [], recRules = [];
+let goalIkon = "🎯", nabungGoalId = null, nabungMode = "in", nabungWho = formWho;
+let recTipe = "pengeluaran", recKat = KATEGORI.pengeluaran[0], recWho = formWho;
+const GOAL_IKON = ["🎯","🏠","🚗","✈️","💍","📱","💻","🎓","🆘","🎁"];
 const shownMap = {};
 function setNum(id, val){ const el = $(id); if(!el) return; countUp(el, shownMap[id] || 0, val); shownMap[id] = val; }
 
@@ -373,6 +498,7 @@ async function loadData(){
   const first = new Date(y, m, 1), last = new Date(y, m+1, 0);
   const iso = d => d.toISOString().slice(0,10);
   $("monthLabel").textContent = first.toLocaleDateString("id-ID", { month:"long", year:"numeric" });
+  await processRecurring();
 
   const { data, error } = await sb.from("transactions")
     .select("*").gte("tanggal", iso(first)).lte("tanggal", iso(last))
@@ -383,7 +509,7 @@ async function loadData(){
   let saldo = 0; const saldoOrang = { Apis: 0, Indri: 0 };
   (all||[]).forEach(t => { const j = +t.jumlah, sgn = t.tipe === "pemasukan" ? j : -j; saldo += sgn;
     if(saldoOrang[t.dicatat_oleh] !== undefined) saldoOrang[t.dicatat_oleh] += sgn; });
-  setNum("saldoTotal", saldo);
+  setNum("saldoTotal", saldo); lastSaldo = saldo;
 
   let sumIn = 0, sumOut = 0;
   const perOrang = { Apis: { inn: 0, out: 0 }, Indri: { inn: 0, out: 0 } };
@@ -442,6 +568,7 @@ async function loadData(){
       </div>
       <div class="side">
         <div class="amt ${t.tipe==="pemasukan" ? "in" : "out"}">${t.tipe==="pemasukan" ? "+" : "−"}${rp(t.jumlah)}</div>
+        <button class="edit" data-edit="${t.id}" title="Edit">✏️</button>
         <button class="del" data-del="${t.id}" title="Hapus">🗑</button>
       </div>
     </div>`; }).join("")
@@ -453,6 +580,11 @@ async function loadData(){
     toast("Transaksi dihapus");
     loadData();
   });
+  document.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => {
+    const t = data.find(x => String(x.id) === b.dataset.edit);
+    if(t) openEdit(t);
+  });
+  await loadExtras();
 }
 function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
@@ -486,6 +618,7 @@ $("segOut").onclick = () => { formTipe = "pengeluaran"; formKat = KATEGORI.penge
 $("segIn").onclick = () => { formTipe = "pemasukan"; formKat = KATEGORI.pemasukan[0]; renderChips(); };
 
 $("fabBtn").onclick = () => {
+  editingId = null; $("txTitle").textContent = "Catat transaksi"; $("saveBtn").textContent = "Simpan";
   $("fTanggal").value = new Date().toISOString().slice(0,10);
   $("fJumlah").value = ""; $("fKet").value = "";
   $("formErr").style.display = "none";
@@ -501,20 +634,234 @@ $("saveBtn").onclick = async () => {
     err.textContent = "Tanggal dan jumlah (lebih dari 0) wajib diisi."; err.style.display = "block"; return;
   }
   $("saveBtn").disabled = true; $("saveBtn").textContent = "Menyimpan…";
-  const { error } = await sb.from("transactions").insert({
+  const payload = {
     tanggal: $("fTanggal").value, tipe: formTipe, kategori: formKat,
     keterangan: $("fKet").value.trim() || null, jumlah, dicatat_oleh: formWho
-  });
-  $("saveBtn").disabled = false; $("saveBtn").textContent = "Simpan";
+  };
+  const wasEdit = !!editingId;
+  const { error } = wasEdit
+    ? await sb.from("transactions").update(payload).eq("id", editingId)
+    : await sb.from("transactions").insert(payload);
+  $("saveBtn").disabled = false; $("saveBtn").textContent = wasEdit ? "Simpan perubahan" : "Simpan";
   if(error){ err.textContent = "Gagal menyimpan: " + error.message; err.style.display = "block"; return; }
+  editingId = null;
   $("txDialog").close();
-  toast("Transaksi tersimpan ✓");
+  toast(wasEdit ? "Perubahan tersimpan ✓" : "Transaksi tersimpan ✓");
   loadData();
 };
+
+// ---------- EDIT TRANSAKSI ----------
+function openEdit(t){
+  editingId = t.id;
+  formTipe = t.tipe; formKat = t.kategori; formWho = t.dicatat_oleh || formWho;
+  $("fTanggal").value = t.tanggal;
+  $("fJumlah").value = t.jumlah; formatJumlah();
+  $("fKet").value = t.keterangan || "";
+  $("formErr").style.display = "none";
+  $("txTitle").textContent = "Edit transaksi";
+  $("saveBtn").textContent = "Simpan perubahan";
+  renderChips();
+  $("txDialog").showModal();
+}
+
+// ---------- TARGET TABUNGAN & TAGIHAN RUTIN ----------
+const isoD = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+function bindAmt(id){ const el = $(id); if(!el) return; el.addEventListener("input", () => { const d = el.value.replace(/\D/g, ""); el.value = d ? Number(d).toLocaleString("id-ID") : ""; }); }
+bindAmt("gTarget"); bindAmt("nJumlah"); bindAmt("rJumlah");
+const amtVal = id => parseInt($(id).value.replace(/\D/g, ""), 10) || 0;
+
+async function processRecurring(){
+  const { data } = await sb.from("recurring").select("*").order("jatuh_tempo");
+  recRules = data || [];
+  const now = new Date(); const y = now.getFullYear(), m = now.getMonth();
+  const periode = y + "-" + String(m + 1).padStart(2, "0");
+  const today = new Date(y, m, now.getDate());
+  for(const r of recRules){
+    if(r.aktif === false || r.terakhir_periode === periode) continue;
+    const lastDay = new Date(y, m + 1, 0).getDate();
+    const due = new Date(y, m, Math.min(r.jatuh_tempo, lastDay));
+    if(today < due) continue;
+    const { data: fresh } = await sb.from("recurring").select("terakhir_periode").eq("id", r.id).single();
+    if(fresh && fresh.terakhir_periode === periode){ r.terakhir_periode = periode; continue; }
+    const { error } = await sb.from("transactions").insert({ tanggal: isoD(due), tipe: r.tipe, kategori: r.kategori, keterangan: r.nama, jumlah: r.jumlah, dicatat_oleh: r.dicatat_oleh || "Apis" });
+    if(!error){
+      await sb.from("recurring").update({ terakhir_periode: periode }).eq("id", r.id);
+      r.terakhir_periode = periode;
+      toast("🔁 Tercatat otomatis: " + r.nama);
+    }
+  }
+}
+
+async function loadExtras(){
+  const [g, e] = await Promise.all([
+    sb.from("savings_goals").select("*").order("created_at"),
+    sb.from("savings_entries").select("*")
+  ]);
+  goals = g.data || []; goalEntries = e.data || [];
+  renderGoals(); renderRecurring();
+}
+
+function goalTerkumpul(gid){ return goalEntries.filter(e => +e.goal_id === +gid).reduce((s, e) => s + (+e.jumlah), 0); }
+
+function renderGoals(){
+  const totalTab = goals.reduce((s, g) => s + goalTerkumpul(g.id), 0);
+  $("goalHint").textContent = goals.length
+    ? "Total tabungan " + rp(totalTab) + " · saldo bebas ≈ " + rp(lastSaldo - totalTab)
+    : "Nabung bareng buat tujuan kalian";
+  $("goalList").innerHTML = goals.length ? goals.map(g => {
+    const kumpul = goalTerkumpul(g.id);
+    const pct = Math.min(100, Math.round(kumpul / g.target * 100));
+    const sisa = Math.max(0, g.target - kumpul);
+    const done = sisa <= 0;
+    let saran = "";
+    if(g.deadline && !done){
+      const now = new Date(); const dl = new Date(g.deadline + "T00:00:00");
+      const bln = Math.max(1, (dl.getFullYear() - now.getFullYear()) * 12 + (dl.getMonth() - now.getMonth()) + 1);
+      saran = " · saran nabung " + rp(Math.ceil(sisa / bln)) + "/bln";
+    }
+    const dlTxt = g.deadline ? "tenggat " + new Date(g.deadline + "T00:00:00").toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "tanpa tenggat";
+    return `<div class="goal">
+      <div class="g-top"><div class="tile" style="background:#fef3c7; width:40px; height:40px; border-radius:13px; font-size:19px">${g.ikon || "🎯"}</div>
+      <div class="g-name">${escapeHtml(g.nama)}</div><div class="g-pct">${done ? "🎉" : pct + "%"}</div></div>
+      <div class="gtrack"><div class="gfill" data-w="${pct}" style="background:linear-gradient(90deg,#0f766e,#10b981)"></div></div>
+      <div class="g-sub">Terkumpul <b>${rp(kumpul)}</b> dari ${rp(g.target)}${done ? " — tercapai! 🎉" : " · sisa " + rp(sisa)}</div>
+      <div class="g-sub">${dlTxt}${saran}</div>
+      <div class="g-act">
+        <button class="mini" data-nabung="${g.id}">＋ Nabung</button>
+        <button class="mini warn" data-ambil="${g.id}">− Ambil</button>
+        <button class="mini icon" data-delgoal="${g.id}" title="Hapus target">🗑</button>
+      </div></div>`;
+  }).join("") : '<div class="empty"><span class="big">🐷</span>Belum ada target tabungan.<br>Yuk bikin satu — buat kos baru, dana darurat, atau liburan!</div>';
+  requestAnimationFrame(() => requestAnimationFrame(() =>
+    document.querySelectorAll(".gfill").forEach(f => f.style.width = f.dataset.w + "%")));
+  document.querySelectorAll("[data-nabung]").forEach(b => b.onclick = () => openNabung(+b.dataset.nabung, "in"));
+  document.querySelectorAll("[data-ambil]").forEach(b => b.onclick = () => openNabung(+b.dataset.ambil, "out"));
+  document.querySelectorAll("[data-delgoal]").forEach(b => b.onclick = async () => {
+    const g = goals.find(x => x.id === +b.dataset.delgoal);
+    if(!confirm("Hapus target \"" + (g ? g.nama : "") + "\" beserta semua catatan nabungnya?")) return;
+    await sb.from("savings_goals").delete().eq("id", b.dataset.delgoal);
+    toast("Target dihapus"); loadData();
+  });
+}
+
+function renderRecurring(){
+  const now = new Date(); const y = now.getFullYear(), m = now.getMonth();
+  const periode = y + "-" + String(m + 1).padStart(2, "0");
+  const today = new Date(y, m, now.getDate());
+  $("recList").innerHTML = recRules.length ? recRules.slice().sort((a, b) => a.jatuh_tempo - b.jatuh_tempo).map(r => {
+    const c = WARNA[r.kategori] || WARNA["Lainnya"];
+    const lastDay = new Date(y, m + 1, 0).getDate();
+    const due = new Date(y, m, Math.min(r.jatuh_tempo, lastDay));
+    const done = r.terakhir_periode === periode;
+    const daysLeft = Math.round((due - today) / 86400000);
+    let st;
+    if(done) st = '<span class="st ok">✓ Tercatat bulan ini</span>';
+    else if(daysLeft <= 0) st = '<span class="st soon">Jatuh tempo — tercatat otomatis</span>';
+    else if(daysLeft <= 7) st = '<span class="st soon">' + daysLeft + ' hari lagi</span>';
+    else st = '<span class="st wait">Tgl ' + r.jatuh_tempo + '</span>';
+    return `<div class="rec">
+      <div class="tile" style="background:${c[0]}; width:44px; height:44px; border-radius:15px; font-size:20px">${IKON[r.kategori] || "🔁"}</div>
+      <div class="mid"><div class="nm">${escapeHtml(r.nama)}</div>
+      <div class="mt">${r.tipe === "pemasukan" ? "+" : "−"}${rp(r.jumlah)} · tiap tgl ${r.jatuh_tempo} · uang ${r.dicatat_oleh || "-"}</div></div>
+      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px">${st}
+      <div style="display:flex; gap:6px">${done ? "" : `<button class="mini" data-payrec="${r.id}" style="flex:none; padding:5px 10px">Catat sekarang</button>`}<button class="del" data-delrec="${r.id}" title="Hapus aturan">🗑</button></div></div>
+    </div>`;
+  }).join("") : '<div class="empty"><span class="big">🔁</span>Belum ada tagihan/rutin.<br>Tambah gaji, kos, atau listrik biar tercatat otomatis.</div>';
+  document.querySelectorAll("[data-delrec]").forEach(b => b.onclick = async () => {
+    const r = recRules.find(x => x.id === +b.dataset.delrec);
+    if(!confirm("Hapus aturan \"" + (r ? r.nama : "") + "\"? Transaksi yang sudah tercatat tidak ikut terhapus.")) return;
+    await sb.from("recurring").delete().eq("id", b.dataset.delrec);
+    toast("Aturan dihapus"); loadData();
+  });
+  document.querySelectorAll("[data-payrec]").forEach(b => b.onclick = async () => {
+    const r = recRules.find(x => x.id === +b.dataset.payrec); if(!r) return;
+    const now2 = new Date(); const periode2 = now2.getFullYear() + "-" + String(now2.getMonth() + 1).padStart(2, "0");
+    const { error } = await sb.from("transactions").insert({ tanggal: isoD(now2), tipe: r.tipe, kategori: r.kategori, keterangan: r.nama, jumlah: r.jumlah, dicatat_oleh: r.dicatat_oleh || "Apis" });
+    if(error){ toast("Gagal: " + error.message); return; }
+    await sb.from("recurring").update({ terakhir_periode: periode2 }).eq("id", r.id);
+    toast("Tercatat ✓ " + r.nama); loadData();
+  });
+}
+
+// ----- dialog target tabungan -----
+function renderGoalIkon(){
+  $("gIkonChips").innerHTML = GOAL_IKON.map(e => `<button type="button" data-gi="${e}" class="${e === goalIkon ? "on" : ""}">${e}</button>`).join("");
+  document.querySelectorAll("[data-gi]").forEach(b => b.onclick = () => { goalIkon = b.dataset.gi; renderGoalIkon(); });
+}
+$("addGoalBtn").onclick = () => { goalIkon = "🎯"; $("gNama").value = ""; $("gTarget").value = ""; $("gDeadline").value = ""; $("gErr").style.display = "none"; renderGoalIkon(); $("goalDialog").showModal(); };
+$("gCancel").onclick = () => $("goalDialog").close();
+$("gSave").onclick = async () => {
+  const err = $("gErr"); err.style.display = "none";
+  const target = amtVal("gTarget");
+  if(!$("gNama").value.trim() || target <= 0){ err.textContent = "Nama target dan jumlah target (lebih dari 0) wajib diisi."; err.style.display = "block"; return; }
+  $("gSave").disabled = true;
+  const { error } = await sb.from("savings_goals").insert({ nama: $("gNama").value.trim(), target, deadline: $("gDeadline").value || null, ikon: goalIkon });
+  $("gSave").disabled = false;
+  if(error){ err.textContent = "Gagal: " + error.message; err.style.display = "block"; return; }
+  $("goalDialog").close(); toast("Target tabungan dibuat 🎯"); loadData();
+};
+
+// ----- dialog nabung / ambil -----
+function renderNabungSeg(){
+  $("nSegIn").className = nabungMode === "in" ? "on-in" : "";
+  $("nSegOut").className = nabungMode === "out" ? "on-out" : "";
+  document.querySelectorAll("[data-nwho]").forEach(b => { b.classList.toggle("on", b.dataset.nwho === nabungWho); b.onclick = () => { nabungWho = b.dataset.nwho; renderNabungSeg(); }; });
+}
+$("nSegIn").onclick = () => { nabungMode = "in"; renderNabungSeg(); };
+$("nSegOut").onclick = () => { nabungMode = "out"; renderNabungSeg(); };
+function openNabung(gid, mode){
+  const g = goals.find(x => x.id === gid); if(!g) return;
+  nabungGoalId = gid; nabungMode = mode; nabungWho = formWho;
+  $("nTitle").textContent = (mode === "in" ? "Nabung ke " : "Ambil dari ") + g.nama;
+  $("nInfo").textContent = "Sudah terkumpul " + rp(goalTerkumpul(gid)) + " dari " + rp(g.target);
+  $("nJumlah").value = ""; $("nKet").value = ""; $("nTanggal").value = isoD(new Date());
+  $("nErr").style.display = "none";
+  renderNabungSeg();
+  $("nabungDialog").showModal();
+}
+$("nCancel").onclick = () => $("nabungDialog").close();
+$("nSave").onclick = async () => {
+  const err = $("nErr"); err.style.display = "none";
+  const jumlah = amtVal("nJumlah");
+  if(jumlah <= 0){ err.textContent = "Jumlah wajib diisi (lebih dari 0)."; err.style.display = "block"; return; }
+  if(nabungMode === "out" && jumlah > goalTerkumpul(nabungGoalId)){ err.textContent = "Jumlah ambil melebihi yang terkumpul."; err.style.display = "block"; return; }
+  $("nSave").disabled = true;
+  const { error } = await sb.from("savings_entries").insert({ goal_id: nabungGoalId, jumlah: nabungMode === "in" ? jumlah : -jumlah, tanggal: $("nTanggal").value || isoD(new Date()), dicatat_oleh: nabungWho, keterangan: $("nKet").value.trim() || null });
+  $("nSave").disabled = false;
+  if(error){ err.textContent = "Gagal: " + error.message; err.style.display = "block"; return; }
+  $("nabungDialog").close(); toast(nabungMode === "in" ? "Tabungan bertambah 🐷" : "Tabungan diambil"); loadData();
+};
+
+// ----- dialog tagihan / rutin -----
+function renderRecChips(){
+  $("rCatChips").innerHTML = KATEGORI[recTipe].map(k => `<button type="button" data-rkat="${k}" class="${k === recKat ? "on" : ""}">${IKON[k] || ""} ${k}</button>`).join("");
+  document.querySelectorAll("[data-rkat]").forEach(b => b.onclick = () => { recKat = b.dataset.rkat; renderRecChips(); });
+  document.querySelectorAll("[data-rwho]").forEach(b => { b.classList.toggle("on", b.dataset.rwho === recWho); b.onclick = () => { recWho = b.dataset.rwho; renderRecChips(); }; });
+  $("rSegOut").className = recTipe === "pengeluaran" ? "on-out" : "";
+  $("rSegIn").className = recTipe === "pemasukan" ? "on-in" : "";
+}
+$("rSegOut").onclick = () => { recTipe = "pengeluaran"; recKat = KATEGORI.pengeluaran[0]; renderRecChips(); };
+$("rSegIn").onclick = () => { recTipe = "pemasukan"; recKat = KATEGORI.pemasukan[0]; renderRecChips(); };
+$("addRecBtn").onclick = () => { recTipe = "pengeluaran"; recKat = KATEGORI.pengeluaran[0]; recWho = formWho; $("rNama").value = ""; $("rJumlah").value = ""; $("rTempo").value = "1"; $("rErr").style.display = "none"; renderRecChips(); $("recDialog").showModal(); };
+$("rCancel").onclick = () => $("recDialog").close();
+$("rSave").onclick = async () => {
+  const err = $("rErr"); err.style.display = "none";
+  const jumlah = amtVal("rJumlah"); const tempo = parseInt($("rTempo").value, 10);
+  if(!$("rNama").value.trim() || jumlah <= 0 || !(tempo >= 1 && tempo <= 31)){ err.textContent = "Nama, jumlah (> 0), dan tanggal jatuh tempo (1–31) wajib benar."; err.style.display = "block"; return; }
+  $("rSave").disabled = true;
+  const { error } = await sb.from("recurring").insert({ nama: $("rNama").value.trim(), tipe: recTipe, kategori: recKat, jumlah, jatuh_tempo: tempo, dicatat_oleh: recWho });
+  $("rSave").disabled = false;
+  if(error){ err.textContent = "Gagal: " + error.message; err.style.display = "block"; return; }
+  $("recDialog").close(); toast("Aturan dibuat 🔁 tercatat otomatis tiap tgl " + tempo); loadData();
+};
+
 
 // Realtime: data berubah di HP pasangan -> tampilan ikut berubah
 sb.channel("tx-changes")
   .on("postgres_changes", { event: "*", schema: "public", table: "transactions" }, () => loadData())
+  .on("postgres_changes", { event: "*", schema: "public", table: "savings_goals" }, () => loadData())
+  .on("postgres_changes", { event: "*", schema: "public", table: "savings_entries" }, () => loadData())
+  .on("postgres_changes", { event: "*", schema: "public", table: "recurring" }, () => loadData())
   .subscribe();
 
 // PWA: daftarkan service worker agar bisa di-install jadi aplikasi

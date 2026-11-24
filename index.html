@@ -230,7 +230,7 @@
   </header>
 
   <div class="card hero anim" style="--i:1">
-    <div class="label">💰 Saldo gabungan saat ini</div>
+    <div class="label">💰 Saldo gabungan bulan ini</div>
     <div class="amount" id="saldoTotal">Rp0</div>
     <div class="flow">
       <div><div class="k"><span class="pill in">↓</span> Pemasukan bulan ini</div><div class="v" id="sumIn">Rp0</div></div>
@@ -505,12 +505,8 @@ async function loadData(){
     .order("tanggal", { ascending:false }).order("created_at", { ascending:false });
   if(error){ $("txList").innerHTML = '<div class="empty">Gagal memuat: ' + error.message + '</div>'; return; }
 
-  const { data: all } = await sb.from("transactions").select("tipe,jumlah,dicatat_oleh");
-  let saldo = 0; const saldoOrang = { Apis: 0, Indri: 0 };
-  (all||[]).forEach(t => { const j = +t.jumlah, sgn = t.tipe === "pemasukan" ? j : -j; saldo += sgn;
-    if(saldoOrang[t.dicatat_oleh] !== undefined) saldoOrang[t.dicatat_oleh] += sgn; });
-  setNum("saldoTotal", saldo); lastSaldo = saldo;
-
+  // Saldo dihitung per bulan yang sedang dilihat saja — minus bulan ini
+  // tidak terbawa ke bulan berikutnya; tiap bulan mulai dari nol lagi.
   let sumIn = 0, sumOut = 0;
   const perOrang = { Apis: { inn: 0, out: 0 }, Indri: { inn: 0, out: 0 } };
   data.forEach(t => {
@@ -518,9 +514,11 @@ async function loadData(){
     if(t.tipe === "pemasukan"){ sumIn += +t.jumlah; if(o) o.inn += +t.jumlah; }
     else { sumOut += +t.jumlah; if(o) o.out += +t.jumlah; }
   });
+  const saldo = sumIn - sumOut; lastSaldo = saldo;
+  setNum("saldoTotal", saldo);
   setNum("sumIn", sumIn); setNum("sumOut", sumOut);
-  setNum("saldoApis", saldoOrang.Apis); setNum("inApis", perOrang.Apis.inn); setNum("outApis", perOrang.Apis.out);
-  setNum("saldoIndri", saldoOrang.Indri); setNum("inIndri", perOrang.Indri.inn); setNum("outIndri", perOrang.Indri.out);
+  setNum("saldoApis", perOrang.Apis.inn - perOrang.Apis.out); setNum("inApis", perOrang.Apis.inn); setNum("outApis", perOrang.Apis.out);
+  setNum("saldoIndri", perOrang.Indri.inn - perOrang.Indri.out); setNum("inIndri", perOrang.Indri.inn); setNum("outIndri", perOrang.Indri.out);
 
   const fdata = txFilter === "semua" ? data : data.filter(t => t.dicatat_oleh === txFilter);
   const perKat = {}; const perDay = {}; let fOut = 0;
@@ -706,7 +704,7 @@ function goalTerkumpul(gid){ return goalEntries.filter(e => +e.goal_id === +gid)
 function renderGoals(){
   const totalTab = goals.reduce((s, g) => s + goalTerkumpul(g.id), 0);
   $("goalHint").textContent = goals.length
-    ? "Total tabungan " + rp(totalTab) + " · saldo bebas ≈ " + rp(lastSaldo - totalTab)
+    ? "Total tabungan terkumpul " + rp(totalTab) + " dari " + goals.length + " target"
     : "Nabung bareng buat tujuan kalian";
   $("goalList").innerHTML = goals.length ? goals.map(g => {
     const kumpul = goalTerkumpul(g.id);

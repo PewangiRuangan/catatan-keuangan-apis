@@ -1,6 +1,6 @@
 // Service worker — Catatan Keuangan Apis & Indri
 // Cache hanya untuk shell aplikasi (HTML + ikon). Data keuangan selalu dari jaringan (Supabase).
-const CACHE = "keuangan-v9";
+const CACHE = "keuangan-v10";
 const SHELL = ["/", "/index.html", "/manifest.webmanifest",
   "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png"];
 

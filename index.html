@@ -102,7 +102,7 @@
   .fill{height:100%; border-radius:99px; width:0; transition:width .9s cubic-bezier(.22,.9,.3,1)}
 
   /* transaksi */
-  .tx{display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); animation:fadeUp .5s both; animation-delay:calc(var(--i,0)*45ms)}
+  .tx{display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); animation:fadeUp .5s both; animation-delay:calc(var(--i,0)*45ms)}
   .tx:last-child{border-bottom:none}
   .tx .mid{flex:1; min-width:0}
   .tx .kat{font-weight:700; font-size:14.5px}
@@ -110,7 +110,9 @@
   .tx .meta{color:var(--muted); font-size:12px; margin-top:2px}
   .tx .amt{font-weight:800; text-align:right; font-size:14.5px}
   .amt.in{color:var(--emerald)} .amt.out{color:var(--coral)}
-  .tx .del{background:#f6f8f7; border:1px solid var(--line); color:#9db3ad; width:30px; height:30px; border-radius:10px; font-size:13px; cursor:pointer; margin-top:6px}
+  .tx .side{display:flex; align-items:center; gap:9px; flex:none}
+  .tx .amt{white-space:nowrap}
+  .tx .del{background:#f6f8f7; border:1px solid var(--line); color:#9db3ad; width:32px; height:32px; border-radius:10px; font-size:13px; cursor:pointer; flex:none; display:flex; align-items:center; justify-content:center}
   .tx .del:active{transform:scale(.92)}
   .empty{color:var(--muted); text-align:center; padding:26px 0}
   .empty .big{font-size:38px; display:block; margin-bottom:8px}
@@ -438,7 +440,7 @@ async function loadData(){
         <div class="ket">${t.keterangan ? escapeHtml(t.keterangan) : "—"}</div>
         <div class="meta">${new Date(t.tanggal+"T00:00:00").toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"})} · uang ${t.dicatat_oleh || "-"}</div>
       </div>
-      <div>
+      <div class="side">
         <div class="amt ${t.tipe==="pemasukan" ? "in" : "out"}">${t.tipe==="pemasukan" ? "+" : "−"}${rp(t.jumlah)}</div>
         <button class="del" data-del="${t.id}" title="Hapus">🗑</button>
       </div>

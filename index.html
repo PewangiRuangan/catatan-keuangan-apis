@@ -265,11 +265,11 @@ const rp = n => "Rp" + Math.round(Number(n||0)).toLocaleString("id-ID");
 const $ = id => document.getElementById(id);
 
 const KATEGORI = {
-  pengeluaran: ["Makan & Minum","Transport","Belanja","Kos & Rumah","Tagihan","Kesehatan","Hiburan","Apotek Alkes","Lainnya"],
-  pemasukan: ["Gaji","Apotek Alkes","Freelance","Lainnya"]
+  pengeluaran: ["Makan & Minum","Transport","Belanja","Kos & Rumah","Tagihan","Kesehatan","Hiburan","Lainnya"],
+  pemasukan: ["Gaji","Freelance","Lainnya"]
 };
-const IKON = {"Makan & Minum":"🍜","Transport":"🛵","Belanja":"🛍️","Kos & Rumah":"🏠","Tagihan":"🧾","Kesehatan":"💊","Hiburan":"🎬","Apotek Alkes":"🏥","Gaji":"💼","Freelance":"💻","Lainnya":"📌"};
-const WARNA = {"Makan & Minum":["#ffedd5","#f97316"],"Transport":["#dbeafe","#2563eb"],"Belanja":["#fce7f3","#db2777"],"Kos & Rumah":["#e0e7ff","#4f46e5"],"Tagihan":["#fef3c7","#d97706"],"Kesehatan":["#dcfce7","#16a34a"],"Hiburan":["#f3e8ff","#9333ea"],"Apotek Alkes":["#ccfbf1","#0d9488"],"Gaji":["#d1fae5","#059669"],"Freelance":["#e0f2fe","#0284c7"],"Lainnya":["#f1f5f9","#64748b"]};
+const IKON = {"Makan & Minum":"🍜","Transport":"🛵","Belanja":"🛍️","Kos & Rumah":"🏠","Tagihan":"🧾","Kesehatan":"💊","Hiburan":"🎬","Gaji":"💼","Freelance":"💻","Lainnya":"📌"};
+const WARNA = {"Makan & Minum":["#ffedd5","#f97316"],"Transport":["#dbeafe","#2563eb"],"Belanja":["#fce7f3","#db2777"],"Kos & Rumah":["#e0e7ff","#4f46e5"],"Tagihan":["#fef3c7","#d97706"],"Kesehatan":["#dcfce7","#16a34a"],"Hiburan":["#f3e8ff","#9333ea"],"Gaji":["#d1fae5","#059669"],"Freelance":["#e0f2fe","#0284c7"],"Lainnya":["#f1f5f9","#64748b"]};
 
 let mode = "login";
 let viewDate = new Date(); viewDate.setDate(1);

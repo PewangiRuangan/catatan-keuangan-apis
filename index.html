@@ -76,6 +76,20 @@
   .legend{display:flex; gap:16px; margin-top:10px; font-size:12px; color:var(--muted)}
   .legend i{display:inline-block; width:9px; height:9px; border-radius:3px; margin-right:5px}
 
+  /* kartu per orang */
+  .duo{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px}
+  .person{border-radius:22px; padding:16px; color:#fff; position:relative; overflow:hidden; box-shadow:var(--shadow)}
+  .person::after{content:""; position:absolute; width:110px; height:110px; border-radius:50%; background:rgba(255,255,255,.12); right:-35px; top:-45px}
+  .person.apis{background:linear-gradient(135deg,#0b3d3a,#0f766e 60%,#14b8a6)}
+  .person.indri{background:linear-gradient(135deg,#881337,#e11d48 60%,#fb7185)}
+  .person .pname{font-weight:800; font-size:15px; position:relative}
+  .person .plabel{font-size:11.5px; opacity:.85; margin-top:10px; position:relative}
+  .person .psaldo{font-size:20px; font-weight:800; margin:2px 0 8px; position:relative}
+  .person .prow{display:flex; justify-content:space-between; gap:6px; font-size:11.5px; padding:5px 0; border-top:1px solid rgba(255,255,255,.25); position:relative}
+  .person .prow b{font-size:12px}
+  @media (max-width:380px){ .person .psaldo{font-size:17px} }
+  .ftabs{margin-top:14px}
+
   /* kategori */
   .cat-row{padding:10px 0; border-bottom:1px dashed var(--line)}
   .cat-row:last-child{border-bottom:none}
@@ -186,7 +200,7 @@
   </header>
 
   <div class="card hero anim" style="--i:1">
-    <div class="label">💰 Saldo saat ini</div>
+    <div class="label">💰 Saldo gabungan saat ini</div>
     <div class="amount" id="saldoTotal">Rp0</div>
     <div class="flow">
       <div><div class="k"><span class="pill in">↓</span> Pemasukan bulan ini</div><div class="v" id="sumIn">Rp0</div></div>
@@ -194,26 +208,49 @@
     </div>
   </div>
 
-  <div class="monthbar anim" style="--i:2">
+  <div class="duo anim" style="--i:2">
+    <div class="person apis">
+      <div class="pname">👨 Apis</div>
+      <div class="plabel">Saldo Apis</div>
+      <div class="psaldo" id="saldoApis">Rp0</div>
+      <div class="prow"><span>↓ Masuk bln ini</span><b id="inApis">Rp0</b></div>
+      <div class="prow"><span>↑ Keluar bln ini</span><b id="outApis">Rp0</b></div>
+    </div>
+    <div class="person indri">
+      <div class="pname">👩 Indri</div>
+      <div class="plabel">Saldo Indri</div>
+      <div class="psaldo" id="saldoIndri">Rp0</div>
+      <div class="prow"><span>↓ Masuk bln ini</span><b id="inIndri">Rp0</b></div>
+      <div class="prow"><span>↑ Keluar bln ini</span><b id="outIndri">Rp0</b></div>
+    </div>
+  </div>
+
+  <div class="monthbar anim" style="--i:3">
     <button id="prevMonth">‹</button>
     <h2 id="monthLabel">Bulan ini</h2>
     <button id="nextMonth">›</button>
   </div>
 
-  <div class="card anim" style="--i:3">
+  <div class="chips ftabs anim" style="--i:3" id="filterChips">
+    <button type="button" data-f="semua" class="on">👀 Semua</button>
+    <button type="button" data-f="Apis">👨 Punya Apis</button>
+    <button type="button" data-f="Indri">👩 Punya Indri</button>
+  </div>
+
+  <div class="card anim" style="--i:4">
     <h3>📊 Arus kas bulan ini</h3>
     <div class="hint">Pemasukan vs pengeluaran per hari</div>
     <div class="chart" id="chart"></div>
     <div class="legend"><span><i style="background:#10b981"></i>Pemasukan</span><span><i style="background:#f43f5e"></i>Pengeluaran</span></div>
   </div>
 
-  <div class="card anim" style="--i:4">
+  <div class="card anim" style="--i:5">
     <h3>🧾 Pengeluaran per kategori</h3>
     <div class="hint">Ke mana uang pergi bulan ini</div>
     <div id="catSummary"><div class="empty">Belum ada data</div></div>
   </div>
 
-  <div class="card anim" style="--i:5">
+  <div class="card anim" style="--i:6">
     <h3>🕘 Riwayat transaksi</h3>
     <div id="txList"><div class="empty">Memuat…</div></div>
   </div>
@@ -240,7 +277,7 @@
     <input id="fJumlah" type="number" inputmode="numeric" min="1" placeholder="cth: 50000">
     <label>Keterangan</label>
     <input id="fKet" type="text" placeholder="cth: bensin, makan siang, gaji…">
-    <label>Dicatat oleh</label>
+    <label>Uang milik siapa?</label>
     <div class="chips" id="whoChips">
       <button type="button" data-who="Apis">Apis</button>
       <button type="button" data-who="Indri">Indri</button>
@@ -275,6 +312,9 @@ let mode = "login";
 let viewDate = new Date(); viewDate.setDate(1);
 let formTipe = "pengeluaran", formKat = KATEGORI.pengeluaran[0], formWho = localStorage.getItem("keuangan_who") || "Apis";
 let shown = { saldo: 0, inn: 0, out: 0 };
+let txFilter = "semua";
+const shownMap = {};
+function setNum(id, val){ const el = $(id); if(!el) return; countUp(el, shownMap[id] || 0, val); shownMap[id] = val; }
 
 // ---------- animasi angka ----------
 function countUp(el, from, to){
@@ -336,19 +376,31 @@ async function loadData(){
     .order("tanggal", { ascending:false }).order("created_at", { ascending:false });
   if(error){ $("txList").innerHTML = '<div class="empty">Gagal memuat: ' + error.message + '</div>'; return; }
 
-  const { data: all } = await sb.from("transactions").select("tipe,jumlah");
-  let saldo = 0; (all||[]).forEach(t => saldo += t.tipe === "pemasukan" ? +t.jumlah : -t.jumlah);
-  countUp($("saldoTotal"), shown.saldo, saldo); shown.saldo = saldo;
+  const { data: all } = await sb.from("transactions").select("tipe,jumlah,dicatat_oleh");
+  let saldo = 0; const saldoOrang = { Apis: 0, Indri: 0 };
+  (all||[]).forEach(t => { const j = +t.jumlah, sgn = t.tipe === "pemasukan" ? j : -j; saldo += sgn;
+    if(saldoOrang[t.dicatat_oleh] !== undefined) saldoOrang[t.dicatat_oleh] += sgn; });
+  setNum("saldoTotal", saldo);
 
-  let sumIn = 0, sumOut = 0; const perKat = {}; const perDay = {};
+  let sumIn = 0, sumOut = 0;
+  const perOrang = { Apis: { inn: 0, out: 0 }, Indri: { inn: 0, out: 0 } };
   data.forEach(t => {
+    const o = perOrang[t.dicatat_oleh];
+    if(t.tipe === "pemasukan"){ sumIn += +t.jumlah; if(o) o.inn += +t.jumlah; }
+    else { sumOut += +t.jumlah; if(o) o.out += +t.jumlah; }
+  });
+  setNum("sumIn", sumIn); setNum("sumOut", sumOut);
+  setNum("saldoApis", saldoOrang.Apis); setNum("inApis", perOrang.Apis.inn); setNum("outApis", perOrang.Apis.out);
+  setNum("saldoIndri", saldoOrang.Indri); setNum("inIndri", perOrang.Indri.inn); setNum("outIndri", perOrang.Indri.out);
+
+  const fdata = txFilter === "semua" ? data : data.filter(t => t.dicatat_oleh === txFilter);
+  const perKat = {}; const perDay = {}; let fOut = 0;
+  fdata.forEach(t => {
     const d = +t.tanggal.slice(8, 10);
     perDay[d] = perDay[d] || { inn: 0, out: 0 };
-    if(t.tipe === "pemasukan"){ sumIn += +t.jumlah; perDay[d].inn += +t.jumlah; }
-    else { sumOut += +t.jumlah; perDay[d].out += +t.jumlah; perKat[t.kategori] = (perKat[t.kategori]||0) + (+t.jumlah); }
+    if(t.tipe === "pemasukan"){ perDay[d].inn += +t.jumlah; }
+    else { perDay[d].out += +t.jumlah; fOut += +t.jumlah; perKat[t.kategori] = (perKat[t.kategori]||0) + (+t.jumlah); }
   });
-  countUp($("sumIn"), shown.inn, sumIn); shown.inn = sumIn;
-  countUp($("sumOut"), shown.out, sumOut); shown.out = sumOut;
 
   // grafik per hari
   const days = last.getDate();
@@ -368,7 +420,7 @@ async function loadData(){
   // kategori + progress bar
   const katKeys = Object.keys(perKat).sort((a,b) => perKat[b]-perKat[a]);
   $("catSummary").innerHTML = katKeys.length
-    ? katKeys.map(k => { const c = WARNA[k] || WARNA["Lainnya"]; const pc = sumOut ? Math.round(perKat[k]/sumOut*100) : 0;
+    ? katKeys.map(k => { const c = WARNA[k] || WARNA["Lainnya"]; const pc = fOut ? Math.round(perKat[k]/fOut*100) : 0;
         return `<div class="cat-row"><div class="cat-head">
           <div class="tile" style="background:${c[0]}">${IKON[k]||"📌"}</div>
           <div class="nm">${k}</div><div class="vl">${rp(perKat[k])}</div><div class="pc">${pc}%</div></div>
@@ -377,13 +429,13 @@ async function loadData(){
   requestAnimationFrame(() => requestAnimationFrame(() =>
     document.querySelectorAll(".fill").forEach(f => f.style.width = f.dataset.w + "%")));
 
-  $("txList").innerHTML = data.length ? data.map((t, i) => { const c = WARNA[t.kategori] || WARNA["Lainnya"]; return `
+  $("txList").innerHTML = fdata.length ? fdata.map((t, i) => { const c = WARNA[t.kategori] || WARNA["Lainnya"]; return `
     <div class="tx" style="--i:${Math.min(i,10)}">
       <div class="tile" style="background:${c[0]}; width:44px; height:44px; border-radius:15px; font-size:20px">${IKON[t.kategori]||"📌"}</div>
       <div class="mid">
         <div class="kat">${t.kategori}</div>
         <div class="ket">${t.keterangan ? escapeHtml(t.keterangan) : "—"}</div>
-        <div class="meta">${new Date(t.tanggal+"T00:00:00").toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"})} · oleh ${t.dicatat_oleh || "-"}</div>
+        <div class="meta">${new Date(t.tanggal+"T00:00:00").toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"})} · uang ${t.dicatat_oleh || "-"}</div>
       </div>
       <div>
         <div class="amt ${t.tipe==="pemasukan" ? "in" : "out"}">${t.tipe==="pemasukan" ? "+" : "−"}${rp(t.jumlah)}</div>
@@ -401,6 +453,11 @@ async function loadData(){
 }
 function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
+document.querySelectorAll("#filterChips [data-f]").forEach(b => b.onclick = () => {
+  txFilter = b.dataset.f;
+  document.querySelectorAll("#filterChips [data-f]").forEach(x => x.classList.toggle("on", x === b));
+  loadData();
+});
 $("prevMonth").onclick = () => { viewDate.setMonth(viewDate.getMonth()-1); loadData(); };
 $("nextMonth").onclick = () => { viewDate.setMonth(viewDate.getMonth()+1); loadData(); };
 

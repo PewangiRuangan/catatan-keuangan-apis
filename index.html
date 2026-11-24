@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Catatan Keuangan — Apis & Indri</title>
-<meta name="theme-color" content="#0f766e">
+<meta name="theme-color" content="#0b3d3a">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -12,126 +12,220 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Keuangan">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --teal:#0f766e; --teal-dark:#115e59; --bg:#f6f7f9; --card:#ffffff;
-    --text:#1f2937; --muted:#6b7280; --line:#e5e7eb;
-    --in:#059669; --out:#dc2626; --amber:#d97706;
+    --ink:#10201d; --muted:#6b7a76; --line:#e7efec; --bg:#f2f7f5;
+    --teal:#0f766e; --emerald:#10b981; --gold:#f5b921; --coral:#f43f5e;
+    --card:#ffffff; --radius:22px;
+    --shadow:0 10px 30px rgba(11,61,58,.08);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
-  body{margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text)}
-  .wrap{max-width:560px; margin:0 auto; padding:16px 16px 96px}
-  header.top{display:flex; align-items:center; justify-content:space-between; padding:8px 0 4px}
-  header.top h1{font-size:20px; margin:0}
-  header.top .sub{color:var(--muted); font-size:13px}
-  button{font:inherit; cursor:pointer; border:none; border-radius:12px}
-  .btn{background:var(--teal); color:#fff; padding:12px 16px; font-weight:600; width:100%}
-  .btn:active{background:var(--teal-dark)}
-  .btn.ghost{background:transparent; color:var(--teal); border:1.5px solid var(--teal); width:auto; padding:8px 14px}
-  .btn.small{width:auto; padding:8px 14px}
-  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin-top:14px}
-  .saldo-card{background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:#fff; border:none}
-  .saldo-card .label{opacity:.85; font-size:13px}
-  .saldo-card .amount{font-size:32px; font-weight:800; margin:4px 0 10px}
-  .saldo-row{display:flex; gap:12px}
-  .saldo-row>div{flex:1; background:rgba(255,255,255,.14); border-radius:12px; padding:10px 12px}
-  .saldo-row .k{font-size:12px; opacity:.85}
-  .saldo-row .v{font-weight:700; margin-top:2px}
-  label{display:block; font-size:13px; color:var(--muted); margin:12px 0 6px}
-  input,select,textarea{width:100%; font:inherit; padding:12px; border:1.5px solid var(--line); border-radius:12px; background:#fff; color:var(--text)}
-  input:focus,select:focus,textarea:focus{outline:none; border-color:var(--teal)}
-  .seg{display:flex; gap:8px}
-  .seg button{flex:1; padding:12px; background:#eef2f2; color:var(--muted); font-weight:600; border-radius:12px}
-  .seg button.on-in{background:var(--in); color:#fff}
-  .seg button.on-out{background:var(--out); color:#fff}
-  .chips{display:flex; flex-wrap:wrap; gap:8px}
-  .chips button{padding:8px 12px; border-radius:999px; background:#eef2f2; color:var(--text); font-size:13px}
-  .chips button.on{background:var(--teal); color:#fff}
-  .tx{display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--line)}
+  html{scroll-behavior:smooth}
+  body{margin:0; font-family:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); overflow-x:hidden}
+  /* latar gradasi bergerak */
+  .bgfx{position:fixed; inset:0; z-index:-1; overflow:hidden; background:linear-gradient(180deg,#e8f6f1 0%,var(--bg) 340px)}
+  .blob{position:absolute; border-radius:50%; filter:blur(60px); opacity:.55; animation:drift 16s ease-in-out infinite alternate}
+  .blob.b1{width:340px;height:340px; background:#5eead4; top:-120px; left:-80px}
+  .blob.b2{width:300px;height:300px; background:#fcd34d; top:-90px; right:-70px; animation-delay:-6s}
+  .blob.b3{width:260px;height:260px; background:#a7f3d0; top:230px; left:55%; animation-delay:-11s; opacity:.35}
+  @keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(34px,26px) scale(1.12)}}
+
+  .wrap{max-width:560px; margin:0 auto; padding:18px 16px 110px}
+  .anim{animation:fadeUp .6s cubic-bezier(.22,.9,.3,1) both; animation-delay:calc(var(--i,0)*70ms)}
+  @keyframes fadeUp{from{opacity:0; transform:translateY(16px)}to{opacity:1; transform:none}}
+
+  header.top{display:flex; align-items:center; gap:12px; padding:6px 0 2px}
+  .avatar{width:46px;height:46px;border-radius:16px; background:linear-gradient(135deg,var(--teal),var(--emerald)); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; box-shadow:var(--shadow)}
+  header.top h1{font-size:17px; margin:0; font-weight:800}
+  header.top .sub{color:var(--muted); font-size:12.5px}
+  .spacer{flex:1}
+  .icon-btn{background:#fff; border:1px solid var(--line); width:42px; height:42px; border-radius:14px; font-size:17px; cursor:pointer; box-shadow:var(--shadow)}
+  .icon-btn:active{transform:scale(.94)}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-top:16px; box-shadow:var(--shadow)}
+  .card h3{margin:0 0 4px; font-size:15px; font-weight:800}
+  .card .hint{color:var(--muted); font-size:12.5px}
+
+  /* kartu saldo hero */
+  .hero{position:relative; overflow:hidden; border:none; color:#fff; border-radius:26px; padding:22px;
+    background:linear-gradient(120deg,#0b3d3a,#0f766e 45%,#10b981 90%); background-size:180% 180%; animation:heroShift 10s ease infinite}
+  @keyframes heroShift{0%,100%{background-position:0% 40%}50%{background-position:90% 60%}}
+  .hero::before,.hero::after{content:""; position:absolute; border-radius:50%; background:rgba(255,255,255,.10)}
+  .hero::before{width:230px;height:230px; right:-70px; top:-90px}
+  .hero::after{width:150px;height:150px; right:60px; bottom:-80px; background:rgba(245,185,33,.18)}
+  .hero .label{opacity:.85; font-size:13px; position:relative}
+  .hero .amount{font-size:34px; font-weight:800; margin:6px 0 4px; letter-spacing:-.5px; position:relative}
+  .hero .flow{display:flex; gap:10px; margin-top:14px; position:relative}
+  .hero .flow>div{flex:1; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.22); backdrop-filter:blur(6px); border-radius:16px; padding:11px 13px}
+  .hero .flow .k{font-size:12px; opacity:.9; display:flex; align-items:center; gap:6px}
+  .hero .flow .v{font-weight:800; margin-top:3px; font-size:15.5px}
+  .pill{display:inline-flex; width:20px; height:20px; border-radius:7px; align-items:center; justify-content:center; font-size:12px; font-weight:800}
+  .pill.in{background:#a7f3d0; color:#065f46} .pill.out{background:#fecdd3; color:#9f1239}
+
+  /* grafik arus kas */
+  .chart{display:flex; align-items:flex-end; gap:3px; height:120px; margin-top:14px; padding-top:6px}
+  .chart .day{flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; min-width:0}
+  .chart .bars{display:flex; align-items:flex-end; gap:2px; height:92px}
+  .chart .bar{width:5px; border-radius:4px 4px 2px 2px; height:0; transition:height .8s cubic-bezier(.22,.9,.3,1)}
+  .chart .bar.in{background:linear-gradient(180deg,#34d399,#059669)}
+  .chart .bar.out{background:linear-gradient(180deg,#fda4af,#f43f5e)}
+  .chart .dlab{font-size:9.5px; color:var(--muted)}
+  .legend{display:flex; gap:16px; margin-top:10px; font-size:12px; color:var(--muted)}
+  .legend i{display:inline-block; width:9px; height:9px; border-radius:3px; margin-right:5px}
+
+  /* kategori */
+  .cat-row{padding:10px 0; border-bottom:1px dashed var(--line)}
+  .cat-row:last-child{border-bottom:none}
+  .cat-head{display:flex; align-items:center; gap:10px}
+  .tile{width:38px; height:38px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:18px; flex:none}
+  .cat-head .nm{font-weight:700; font-size:14px; flex:1}
+  .cat-head .vl{font-weight:800; font-size:14px}
+  .cat-head .pc{color:var(--muted); font-size:12px; font-weight:600; width:38px; text-align:right}
+  .track{height:8px; background:#eef4f2; border-radius:99px; margin:8px 0 0 48px; overflow:hidden}
+  .fill{height:100%; border-radius:99px; width:0; transition:width .9s cubic-bezier(.22,.9,.3,1)}
+
+  /* transaksi */
+  .tx{display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); animation:fadeUp .5s both; animation-delay:calc(var(--i,0)*45ms)}
   .tx:last-child{border-bottom:none}
-  .tx .ic{width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex:none}
   .tx .mid{flex:1; min-width:0}
-  .tx .kat{font-weight:600}
+  .tx .kat{font-weight:700; font-size:14.5px}
   .tx .ket{color:var(--muted); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
   .tx .meta{color:var(--muted); font-size:12px; margin-top:2px}
-  .tx .amt{font-weight:700; text-align:right}
-  .tx .del{background:none; color:#9ca3af; font-size:16px; padding:2px 4px}
-  .amt.in{color:var(--in)} .amt.out{color:var(--out)}
-  .empty{color:var(--muted); text-align:center; padding:24px 0}
-  .err{background:#fef2f2; color:#991b1b; border:1px solid #fecaca; border-radius:12px; padding:10px 12px; font-size:14px; margin-top:12px; display:none}
-  .ok{background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; border-radius:12px; padding:10px 12px; font-size:14px; margin-top:12px; display:none}
-  .monthbar{display:flex; align-items:center; justify-content:space-between; margin-top:18px}
-  .monthbar h2{font-size:16px; margin:0}
-  .monthbar button{background:#eef2f2; width:38px; height:38px; border-radius:10px; font-size:18px}
-  .cat-row{display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed var(--line); font-size:14px}
-  .cat-row:last-child{border-bottom:none}
+  .tx .amt{font-weight:800; text-align:right; font-size:14.5px}
+  .amt.in{color:var(--emerald)} .amt.out{color:var(--coral)}
+  .tx .del{background:#f6f8f7; border:1px solid var(--line); color:#9db3ad; width:30px; height:30px; border-radius:10px; font-size:13px; cursor:pointer; margin-top:6px}
+  .tx .del:active{transform:scale(.92)}
+  .empty{color:var(--muted); text-align:center; padding:26px 0}
+  .empty .big{font-size:38px; display:block; margin-bottom:8px}
+
+  .monthbar{display:flex; align-items:center; justify-content:space-between; margin-top:20px}
+  .monthbar h2{font-size:16.5px; margin:0; font-weight:800}
+  .monthbar button{background:#fff; border:1px solid var(--line); width:40px; height:40px; border-radius:13px; font-size:19px; cursor:pointer; box-shadow:var(--shadow)}
+  .monthbar button:active{transform:scale(.93)}
+
+  /* auth */
+  .auth-hero{text-align:center; padding:26px 0 4px}
+  .coin{width:86px; height:86px; margin:0 auto 14px; border-radius:50%; background:radial-gradient(circle at 32% 30%,#ffe27a,#f5b921 60%,#d9930d); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:30px; color:#0b3d3a; border:4px solid #fff3c4; box-shadow:0 14px 30px rgba(245,185,33,.35); animation:bob 3.2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  .auth-hero h1{margin:0; font-size:22px; font-weight:800}
+  .auth-hero p{color:var(--muted); margin:6px 0 0; font-size:13.5px}
+  label{display:block; font-size:13px; color:var(--muted); margin:14px 0 6px; font-weight:600}
+  input,select{width:100%; font:inherit; padding:13px 14px; border:1.5px solid var(--line); border-radius:14px; background:#fff; color:var(--ink)}
+  input:focus,select:focus{outline:none; border-color:var(--teal); box-shadow:0 0 0 4px rgba(15,118,110,.12)}
+  .btn{background:linear-gradient(135deg,var(--teal),var(--emerald)); color:#fff; padding:14px 16px; font-weight:700; width:100%; border:none; border-radius:14px; font:inherit; cursor:pointer; box-shadow:0 10px 22px rgba(15,118,110,.28); transition:transform .12s}
+  .btn:active{transform:scale(.98)}
+  .btn.ghost{background:#fff; color:var(--teal); border:1.5px solid var(--teal); box-shadow:none; width:auto; padding:10px 16px}
+  .err{background:#fff1f2; color:#9f1239; border:1px solid #fecdd3; border-radius:12px; padding:10px 12px; font-size:14px; margin-top:12px; display:none}
+  .auth-switch{text-align:center; margin-top:16px; font-size:14px; color:var(--muted)}
+  .auth-switch a{color:var(--teal); font-weight:700; cursor:pointer}
   .hidden{display:none !important}
-  .auth-switch{text-align:center; margin-top:14px; font-size:14px; color:var(--muted)}
-  .auth-switch a{color:var(--teal); font-weight:600; cursor:pointer}
-  .fab{position:fixed; right:16px; bottom:16px; background:var(--teal); color:#fff; border-radius:999px; padding:14px 20px; font-weight:700; box-shadow:0 8px 20px rgba(15,118,110,.35); z-index:5}
-  dialog{border:none; border-radius:20px; padding:0; width:min(94vw,480px); max-height:92vh; overflow:auto}
-  dialog::backdrop{background:rgba(0,0,0,.45)}
-  dialog .inner{padding:20px}
-  dialog h3{margin:0 0 4px}
+
+  /* FAB + bottom sheet */
+  .fab{position:fixed; right:18px; bottom:calc(18px + env(safe-area-inset-bottom)); z-index:6; border:none; cursor:pointer;
+    background:linear-gradient(135deg,var(--teal),var(--emerald)); color:#fff; border-radius:999px; padding:15px 22px; font:inherit; font-weight:800;
+    box-shadow:0 14px 30px rgba(15,118,110,.4); display:flex; align-items:center; gap:8px; animation:fabIn .5s .3s both}
+  .fab:active{transform:scale(.96)}
+  @keyframes fabIn{from{opacity:0; transform:translateY(18px) scale(.9)}to{opacity:1; transform:none}}
+  dialog{border:none; padding:0; width:min(100vw,560px); max-width:100vw; margin:auto auto 0; border-radius:26px 26px 0 0; box-shadow:0 -12px 40px rgba(0,0,0,.25)}
+  dialog[open]{animation:sheetUp .38s cubic-bezier(.22,.9,.3,1)}
+  @keyframes sheetUp{from{transform:translateY(60px); opacity:.4}to{transform:none; opacity:1}}
+  dialog::backdrop{background:rgba(9,32,29,.5); backdrop-filter:blur(2px)}
+  dialog .inner{padding:20px 20px calc(20px + env(safe-area-inset-bottom))}
+  .grab{width:44px; height:5px; border-radius:99px; background:#dbe7e3; margin:0 auto 12px}
+  dialog h3{margin:0 0 2px; font-size:17px; font-weight:800}
+  .seg{display:flex; gap:8px; background:#eef4f2; padding:5px; border-radius:15px}
+  .seg button{flex:1; padding:11px; border:none; background:transparent; color:var(--muted); font:inherit; font-weight:700; border-radius:11px; cursor:pointer; transition:all .2s}
+  .seg button.on-in{background:#fff; color:var(--emerald); box-shadow:0 4px 12px rgba(16,185,129,.18)}
+  .seg button.on-out{background:#fff; color:var(--coral); box-shadow:0 4px 12px rgba(244,63,94,.15)}
+  .chips{display:flex; flex-wrap:wrap; gap:8px}
+  .chips button{padding:9px 13px; border-radius:999px; background:#eef4f2; border:1.5px solid transparent; color:var(--ink); font:inherit; font-size:13px; font-weight:600; cursor:pointer; transition:all .15s}
+  .chips button.on{background:#e6f7f3; border-color:var(--teal); color:var(--teal-dark,#0b3d3a)}
+  .chips button:active{transform:scale(.95)}
+
+  /* toast */
+  .toast{position:fixed; left:50%; bottom:96px; transform:translate(-50%,20px); background:#0b3d3a; color:#fff; padding:12px 18px; border-radius:999px; font-size:14px; font-weight:600; opacity:0; pointer-events:none; transition:all .35s cubic-bezier(.22,.9,.3,1); z-index:9; box-shadow:0 12px 28px rgba(0,0,0,.25)}
+  .toast.show{opacity:1; transform:translate(-50%,0)}
+  @media (prefers-reduced-motion: reduce){*{animation:none !important; transition:none !important}}
 </style>
 </head>
 <body>
+<div class="bgfx"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
 
 <!-- ============ AUTH ============ -->
 <div class="wrap" id="authView">
-  <header class="top"><div><h1>💰 Catatan Keuangan</h1><div class="sub">Apis &amp; Indri</div></div></header>
-  <div class="card">
-    <h3 id="authTitle" style="margin-top:0">Masuk</h3>
+  <div class="auth-hero anim">
+    <div class="coin">Rp</div>
+    <h1>Catatan Keuangan</h1>
+    <p>Keuangan berdua, tercatat rapi &amp; real-time 💑</p>
+  </div>
+  <div class="card anim" style="--i:1">
+    <h3 id="authTitle">Selamat datang 👋</h3>
+    <div class="hint">Masuk pakai akun bareng kalian</div>
     <label>Email</label>
     <input id="authEmail" type="email" autocomplete="email" placeholder="email@contoh.com">
     <label>Kata sandi</label>
     <input id="authPass" type="password" autocomplete="current-password" placeholder="••••••••">
     <div class="err" id="authErr"></div>
-    <div style="height:14px"></div>
+    <div style="height:16px"></div>
     <button class="btn" id="authBtn">Masuk</button>
-    <div class="auth-switch" id="authSwitch">Belum punya akun? <a id="authToggle">Daftar dulu</a></div>
-    <p style="color:var(--muted); font-size:13px; margin-bottom:0">Satu akun dipakai berdua — daftar sekali, lalu email + kata sandi yang sama dipakai Apis dan Indri di HP masing-masing.</p>
+    <div class="auth-switch"><span id="authSwitchText">Belum punya akun? </span><a id="authToggle">Daftar dulu</a></div>
+    <p style="color:var(--muted); font-size:12.5px; margin-bottom:0">Satu akun dipakai berdua — daftar sekali, lalu email + kata sandi yang sama dipakai Apis dan Indri di HP masing-masing.</p>
   </div>
 </div>
 
 <!-- ============ APP ============ -->
 <div class="wrap hidden" id="appView">
-  <header class="top">
-    <div><h1>💰 Catatan Keuangan</h1><div class="sub" id="whoLabel">Apis &amp; Indri</div></div>
-    <button class="btn ghost" id="logoutBtn">Keluar</button>
+  <header class="top anim">
+    <div class="avatar">A♥I</div>
+    <div><h1>Halo, Apis &amp; Indri</h1><div class="sub">Semoga makin rajin nabung ya ✨</div></div>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="logoutBtn" title="Keluar">↩</button>
   </header>
 
-  <div class="card saldo-card">
-    <div class="label">Saldo saat ini</div>
+  <div class="card hero anim" style="--i:1">
+    <div class="label">💰 Saldo saat ini</div>
     <div class="amount" id="saldoTotal">Rp0</div>
-    <div class="saldo-row">
-      <div><div class="k">Pemasukan bulan ini</div><div class="v" id="sumIn">Rp0</div></div>
-      <div><div class="k">Pengeluaran bulan ini</div><div class="v" id="sumOut">Rp0</div></div>
+    <div class="flow">
+      <div><div class="k"><span class="pill in">↓</span> Pemasukan bulan ini</div><div class="v" id="sumIn">Rp0</div></div>
+      <div><div class="k"><span class="pill out">↑</span> Pengeluaran bulan ini</div><div class="v" id="sumOut">Rp0</div></div>
     </div>
   </div>
 
-  <div class="monthbar">
+  <div class="monthbar anim" style="--i:2">
     <button id="prevMonth">‹</button>
     <h2 id="monthLabel">Bulan ini</h2>
     <button id="nextMonth">›</button>
   </div>
 
-  <div class="card">
-    <h3 style="margin:0 0 6px; font-size:15px">Pengeluaran per kategori (bulan ini)</h3>
+  <div class="card anim" style="--i:3">
+    <h3>📊 Arus kas bulan ini</h3>
+    <div class="hint">Pemasukan vs pengeluaran per hari</div>
+    <div class="chart" id="chart"></div>
+    <div class="legend"><span><i style="background:#10b981"></i>Pemasukan</span><span><i style="background:#f43f5e"></i>Pengeluaran</span></div>
+  </div>
+
+  <div class="card anim" style="--i:4">
+    <h3>🧾 Pengeluaran per kategori</h3>
+    <div class="hint">Ke mana uang pergi bulan ini</div>
     <div id="catSummary"><div class="empty">Belum ada data</div></div>
   </div>
 
-  <div class="card">
-    <h3 style="margin:0 0 6px; font-size:15px">Riwayat transaksi</h3>
+  <div class="card anim" style="--i:5">
+    <h3>🕘 Riwayat transaksi</h3>
     <div id="txList"><div class="empty">Memuat…</div></div>
   </div>
 </div>
 
-<button class="fab hidden" id="fabBtn">+ Catat</button>
+<button class="fab hidden" id="fabBtn">＋ Catat</button>
+<div class="toast" id="toast">Tersimpan ✓</div>
 
-<!-- ============ FORM ============ -->
+<!-- ============ FORM (bottom sheet) ============ -->
 <dialog id="txDialog">
   <div class="inner">
+    <div class="grab"></div>
     <h3>Catat transaksi</h3>
     <label>Jenis</label>
     <div class="seg">
@@ -152,8 +246,7 @@
       <button type="button" data-who="Indri">Indri</button>
     </div>
     <div class="err" id="formErr"></div>
-    <div class="ok" id="formOk"></div>
-    <div style="display:flex; gap:8px; margin-top:16px">
+    <div style="display:flex; gap:8px; margin-top:18px">
       <button class="btn ghost" id="cancelBtn" style="flex:1">Batal</button>
       <button class="btn" id="saveBtn" style="flex:2">Simpan</button>
     </div>
@@ -162,13 +255,13 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ===== KONFIGURASI — diisi setelah project Supabase jadi =====
+// ===== KONFIGURASI SUPABASE =====
 const SUPABASE_URL = "https://ellsklvdtrqugnipzige.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_jklpWDQLj4uWVRy5BQQ9NA_DRpd1FHM";
-// ===========================================================
+// ================================
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const rp = n => "Rp" + Number(n||0).toLocaleString("id-ID");
+const rp = n => "Rp" + Math.round(Number(n||0)).toLocaleString("id-ID");
 const $ = id => document.getElementById(id);
 
 const KATEGORI = {
@@ -176,17 +269,34 @@ const KATEGORI = {
   pemasukan: ["Gaji","Apotek Alkes","Freelance","Lainnya"]
 };
 const IKON = {"Makan & Minum":"🍜","Transport":"🛵","Belanja":"🛍️","Kos & Rumah":"🏠","Tagihan":"🧾","Kesehatan":"💊","Hiburan":"🎬","Apotek Alkes":"🏥","Gaji":"💼","Freelance":"💻","Lainnya":"📌"};
+const WARNA = {"Makan & Minum":["#ffedd5","#f97316"],"Transport":["#dbeafe","#2563eb"],"Belanja":["#fce7f3","#db2777"],"Kos & Rumah":["#e0e7ff","#4f46e5"],"Tagihan":["#fef3c7","#d97706"],"Kesehatan":["#dcfce7","#16a34a"],"Hiburan":["#f3e8ff","#9333ea"],"Apotek Alkes":["#ccfbf1","#0d9488"],"Gaji":["#d1fae5","#059669"],"Freelance":["#e0f2fe","#0284c7"],"Lainnya":["#f1f5f9","#64748b"]};
 
 let mode = "login";
 let viewDate = new Date(); viewDate.setDate(1);
 let formTipe = "pengeluaran", formKat = KATEGORI.pengeluaran[0], formWho = localStorage.getItem("keuangan_who") || "Apis";
+let shown = { saldo: 0, inn: 0, out: 0 };
+
+// ---------- animasi angka ----------
+function countUp(el, from, to){
+  const t0 = performance.now(), dur = 700;
+  function step(t){
+    const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+    el.textContent = rp(from + (to - from) * e);
+    if(p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function toast(msg){
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2200);
+}
 
 // ---------- AUTH ----------
 function bindToggle(){ const t = $("authToggle"); if(t) t.onclick = () => {
   mode = mode === "login" ? "register" : "login";
-  $("authTitle").textContent = mode === "login" ? "Masuk" : "Daftar akun baru";
+  $("authTitle").textContent = mode === "login" ? "Selamat datang 👋" : "Bikin akun bareng 🎉";
   $("authBtn").textContent = mode === "login" ? "Masuk" : "Daftar";
-  $("authSwitch").firstChild.textContent = mode === "login" ? "Belum punya akun? " : "Sudah punya akun? ";
+  $("authSwitchText").textContent = mode === "login" ? "Belum punya akun? " : "Sudah punya akun? ";
   t.textContent = mode === "login" ? "Daftar dulu" : "Masuk";
 };}
 bindToggle();
@@ -201,7 +311,8 @@ $("authBtn").onclick = async () => {
     : await sb.auth.signUp({ email, password: pass });
   $("authBtn").disabled = false; $("authBtn").textContent = mode === "login" ? "Masuk" : "Daftar";
   if(res.error){ err.textContent = "Gagal: " + res.error.message; err.style.display = "block"; return; }
-  if(mode === "register" && !res.data.session){ err.textContent = "Akun dibuat. Coba masuk sekarang."; err.style.display = "block"; mode = "login"; return; }
+  if(mode === "register" && !res.data.session){ err.textContent = "Akun dibuat. Coba masuk sekarang."; err.style.display = "block"; mode = "login"; bindToggle(); return; }
+  if(mode === "register") toast("Akun bareng berhasil dibuat 🎉");
 };
 
 $("logoutBtn").onclick = async () => { await sb.auth.signOut(); };
@@ -225,26 +336,50 @@ async function loadData(){
     .order("tanggal", { ascending:false }).order("created_at", { ascending:false });
   if(error){ $("txList").innerHTML = '<div class="empty">Gagal memuat: ' + error.message + '</div>'; return; }
 
-  // saldo total (semua waktu)
   const { data: all } = await sb.from("transactions").select("tipe,jumlah");
   let saldo = 0; (all||[]).forEach(t => saldo += t.tipe === "pemasukan" ? +t.jumlah : -t.jumlah);
-  $("saldoTotal").textContent = rp(saldo);
+  countUp($("saldoTotal"), shown.saldo, saldo); shown.saldo = saldo;
 
-  let sumIn = 0, sumOut = 0; const perKat = {};
+  let sumIn = 0, sumOut = 0; const perKat = {}; const perDay = {};
   data.forEach(t => {
-    if(t.tipe === "pemasukan") sumIn += +t.jumlah;
-    else { sumOut += +t.jumlah; perKat[t.kategori] = (perKat[t.kategori]||0) + (+t.jumlah); }
+    const d = +t.tanggal.slice(8, 10);
+    perDay[d] = perDay[d] || { inn: 0, out: 0 };
+    if(t.tipe === "pemasukan"){ sumIn += +t.jumlah; perDay[d].inn += +t.jumlah; }
+    else { sumOut += +t.jumlah; perDay[d].out += +t.jumlah; perKat[t.kategori] = (perKat[t.kategori]||0) + (+t.jumlah); }
   });
-  $("sumIn").textContent = rp(sumIn); $("sumOut").textContent = rp(sumOut);
+  countUp($("sumIn"), shown.inn, sumIn); shown.inn = sumIn;
+  countUp($("sumOut"), shown.out, sumOut); shown.out = sumOut;
 
+  // grafik per hari
+  const days = last.getDate();
+  let maxDay = 1; Object.values(perDay).forEach(v => maxDay = Math.max(maxDay, v.inn, v.out));
+  let chartHtml = "";
+  for(let d = 1; d <= days; d++){
+    const v = perDay[d] || { inn: 0, out: 0 };
+    chartHtml += `<div class="day"><div class="bars">
+      <div class="bar in" data-h="${Math.round(v.inn / maxDay * 88)}"></div>
+      <div class="bar out" data-h="${Math.round(v.out / maxDay * 88)}"></div></div>
+      <div class="dlab">${d % 5 === 1 || d === days ? d : ""}</div></div>`;
+  }
+  $("chart").innerHTML = chartHtml;
+  requestAnimationFrame(() => requestAnimationFrame(() =>
+    document.querySelectorAll(".chart .bar").forEach(b => b.style.height = b.dataset.h + "px")));
+
+  // kategori + progress bar
   const katKeys = Object.keys(perKat).sort((a,b) => perKat[b]-perKat[a]);
   $("catSummary").innerHTML = katKeys.length
-    ? katKeys.map(k => `<div class="cat-row"><span>${IKON[k]||"📌"} ${k}</span><b>${rp(perKat[k])}</b></div>`).join("")
-    : '<div class="empty">Belum ada pengeluaran bulan ini</div>';
+    ? katKeys.map(k => { const c = WARNA[k] || WARNA["Lainnya"]; const pc = sumOut ? Math.round(perKat[k]/sumOut*100) : 0;
+        return `<div class="cat-row"><div class="cat-head">
+          <div class="tile" style="background:${c[0]}">${IKON[k]||"📌"}</div>
+          <div class="nm">${k}</div><div class="vl">${rp(perKat[k])}</div><div class="pc">${pc}%</div></div>
+          <div class="track"><div class="fill" data-w="${pc}" style="background:linear-gradient(90deg,${c[1]},${c[1]}bb)"></div></div></div>`; }).join("")
+    : '<div class="empty"><span class="big">🌱</span>Belum ada pengeluaran bulan ini</div>';
+  requestAnimationFrame(() => requestAnimationFrame(() =>
+    document.querySelectorAll(".fill").forEach(f => f.style.width = f.dataset.w + "%")));
 
-  $("txList").innerHTML = data.length ? data.map(t => `
-    <div class="tx">
-      <div class="ic" style="background:${t.tipe==="pemasukan" ? "#ecfdf5" : "#fef2f2"}">${IKON[t.kategori]||"📌"}</div>
+  $("txList").innerHTML = data.length ? data.map((t, i) => { const c = WARNA[t.kategori] || WARNA["Lainnya"]; return `
+    <div class="tx" style="--i:${Math.min(i,10)}">
+      <div class="tile" style="background:${c[0]}; width:44px; height:44px; border-radius:15px; font-size:20px">${IKON[t.kategori]||"📌"}</div>
       <div class="mid">
         <div class="kat">${t.kategori}</div>
         <div class="ket">${t.keterangan ? escapeHtml(t.keterangan) : "—"}</div>
@@ -254,12 +389,13 @@ async function loadData(){
         <div class="amt ${t.tipe==="pemasukan" ? "in" : "out"}">${t.tipe==="pemasukan" ? "+" : "−"}${rp(t.jumlah)}</div>
         <button class="del" data-del="${t.id}" title="Hapus">🗑</button>
       </div>
-    </div>`).join("")
-    : '<div class="empty">Belum ada transaksi bulan ini</div>';
+    </div>`; }).join("")
+    : '<div class="empty"><span class="big">🧾</span>Belum ada transaksi bulan ini.<br>Ketuk tombol <b>+ Catat</b> buat mulai!</div>';
 
   document.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
     if(!confirm("Hapus transaksi ini?")) return;
     await sb.from("transactions").delete().eq("id", b.dataset.del);
+    toast("Transaksi dihapus");
     loadData();
   });
 }
@@ -286,15 +422,14 @@ $("segIn").onclick = () => { formTipe = "pemasukan"; formKat = KATEGORI.pemasuka
 $("fabBtn").onclick = () => {
   $("fTanggal").value = new Date().toISOString().slice(0,10);
   $("fJumlah").value = ""; $("fKet").value = "";
-  $("formErr").style.display = "none"; $("formOk").style.display = "none";
+  $("formErr").style.display = "none";
   renderChips();
   $("txDialog").showModal();
 };
 $("cancelBtn").onclick = () => $("txDialog").close();
 
 $("saveBtn").onclick = async () => {
-  const err = $("formErr"), ok = $("formOk");
-  err.style.display = "none"; ok.style.display = "none";
+  const err = $("formErr"); err.style.display = "none";
   const jumlah = parseInt($("fJumlah").value, 10);
   if(!$("fTanggal").value || !jumlah || jumlah <= 0){
     err.textContent = "Tanggal dan jumlah (lebih dari 0) wajib diisi."; err.style.display = "block"; return;
@@ -306,8 +441,9 @@ $("saveBtn").onclick = async () => {
   });
   $("saveBtn").disabled = false; $("saveBtn").textContent = "Simpan";
   if(error){ err.textContent = "Gagal menyimpan: " + error.message; err.style.display = "block"; return; }
-  ok.textContent = "Tersimpan ✓"; ok.style.display = "block";
-  setTimeout(() => { $("txDialog").close(); loadData(); }, 500);
+  $("txDialog").close();
+  toast("Transaksi tersimpan ✓");
+  loadData();
 };
 
 // Realtime: data berubah di HP pasangan -> tampilan ikut berubah
